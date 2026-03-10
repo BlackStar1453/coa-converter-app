@@ -3,11 +3,22 @@
 import os
 from PyInstaller.utils.hooks import collect_all
 
-# --- Paths (relative to spec file location) ---
-coa_converter_dir = os.path.join(os.path.dirname(SPECPATH), 'coa-converter')
-if not os.path.isdir(coa_converter_dir):
-    # Fallback: sibling directory in ~/tools/
-    coa_converter_dir = os.path.join(os.path.expanduser('~'), 'tools', 'coa-converter')
+# --- Paths: try multiple candidate locations ---
+_candidates = [
+    os.path.join(os.path.dirname(SPECPATH), 'coa-converter'),            # same dir (CI checkout)
+    os.path.join(os.path.dirname(SPECPATH), '..', 'coa-converter'),      # sibling dir (local dev)
+    os.path.join(os.path.expanduser('~'), 'tools', 'coa-converter'),     # ~/tools/ (fallback)
+]
+coa_converter_dir = None
+for _c in _candidates:
+    _c = os.path.abspath(_c)
+    if os.path.isfile(os.path.join(_c, 'coa_converter.py')):
+        coa_converter_dir = _c
+        break
+if coa_converter_dir is None:
+    raise FileNotFoundError(
+        f"Cannot find coa-converter backend. Searched: {[os.path.abspath(c) for c in _candidates]}"
+    )
 
 datas = [
     ('src/styles/theme.qss', 'src/styles'),
