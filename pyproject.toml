@@ -1,0 +1,20 @@
+[project]
+name = "coa-converter-app"
+version = "1.0.0"
+description = "COA PDF-to-Template Converter Desktop Application"
+requires-python = ">=3.12"
+dependencies = [
+    "PySide6-Essentials>=6.7.0",
+    "anthropic>=0.84.0",
+    "pdfplumber>=0.11.0",
+    "openpyxl>=3.1.0",
+    "python-docx>=1.1.0",
+    "PyMuPDF>=1.24.0",
+]
+
+[project.scripts]
+coa-converter = "src.main:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
