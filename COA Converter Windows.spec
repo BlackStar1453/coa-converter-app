@@ -5,7 +5,8 @@ from PyInstaller.utils.hooks import collect_all
 
 # --- Paths: try multiple candidate locations ---
 _candidates = [
-    os.path.join(SPECPATH, 'coa-converter'),                             # same dir (CI checkout)
+    os.path.join(SPECPATH, 'coa-converter'),                             # same dir (CI checkout, flat)
+    os.path.join(SPECPATH, 'coa-converter', 'tools', 'coa-converter'),   # CI checkout (nested repo layout)
     os.path.join(SPECPATH, '..', 'coa-converter'),                       # sibling dir (local dev)
     os.path.join(os.path.expanduser('~'), 'tools', 'coa-converter'),     # ~/tools/ (fallback)
 ]
