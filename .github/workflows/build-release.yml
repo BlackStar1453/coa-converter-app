@@ -1,0 +1,119 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout coa-converter-app
+        uses: actions/checkout@v4
+
+      - name: Checkout coa-converter backend
+        uses: actions/checkout@v4
+        with:
+          repository: BlackStar1453/coa-converter
+          path: coa-converter
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller --noconfirm "COA Converter Windows.spec"
+
+      - name: Verify build output
+        run: |
+          if (Test-Path "dist\COA Converter\COA Converter.exe") {
+            Write-Host "Build successful!"
+          } else {
+            Write-Host "Build FAILED - exe not found"
+            exit 1
+          }
+
+      - name: Package as zip
+        run: Compress-Archive -Path "dist\COA Converter\*" -DestinationPath "COA-Converter-Windows.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: COA-Converter-Windows
+          path: COA-Converter-Windows.zip
+          retention-days: 30
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout coa-converter-app
+        uses: actions/checkout@v4
+
+      - name: Checkout coa-converter backend
+        uses: actions/checkout@v4
+        with:
+          repository: BlackStar1453/coa-converter
+          path: coa-converter
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller --noconfirm "COA Converter.spec"
+
+      - name: Verify build output
+        run: |
+          if [ -d "dist/COA Converter.app" ]; then
+            echo "Build successful!"
+          else
+            echo "Build FAILED - .app not found"
+            exit 1
+          fi
+
+      - name: Package as zip
+        run: cd dist && zip -r ../COA-Converter-macOS.zip "COA Converter.app"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: COA-Converter-macOS
+          path: COA-Converter-macOS.zip
+          retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/COA-Converter-Windows/COA-Converter-Windows.zip
+            artifacts/COA-Converter-macOS/COA-Converter-macOS.zip
