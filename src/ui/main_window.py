@@ -15,6 +15,7 @@ from src.ui.panels.conversion_panel import ConversionPanel
 from src.ui.panels.results_panel import ResultsPanel
 from src.ui.panels.batch_panel import BatchPanel
 from src.ui.panels.settings_panel import SettingsPanel
+from src.ui.widgets.trial_banner import TrialBanner, TrialExpiredDialog
 
 log = logging.getLogger(__name__)
 
@@ -29,14 +30,23 @@ class MainWindow(QMainWindow):
         self._setup_ui()
         self._connect_signals()
         self._restore_geometry()
+        self._check_trial()
 
     def _setup_ui(self):
         self.setWindowTitle("COA Converter")
         self.setMinimumSize(QSize(900, 650))
 
-        # Central tabs
+        # Central container (banner + tabs)
+        central = QWidget()
+        central_layout = QVBoxLayout(central)
+        central_layout.setContentsMargins(0, 0, 0, 0)
+        central_layout.setSpacing(0)
+
+        self._trial_banner_slot = central_layout  # used by _check_trial
+
         self.tabs = QTabWidget()
-        self.setCentralWidget(self.tabs)
+        central_layout.addWidget(self.tabs)
+        self.setCentralWidget(central)
 
         # Tab 1: File Setup
         self.file_panel = FilePanel(self.settings)
@@ -112,6 +122,18 @@ class MainWindow(QMainWindow):
         state = self.settings.window_state()
         if state:
             self.restoreState(state)
+
+    def _check_trial(self):
+        """Check trial status and show banner or expiration dialog."""
+        remaining = self.settings.trial_remaining_days()
+        if self.settings.is_trial_expired():
+            log.warning("[MainWindow] Trial expired, blocking access")
+            dlg = TrialExpiredDialog(self)
+            dlg.exec()
+        else:
+            log.info("[MainWindow] Trial active, %.1f days remaining", remaining)
+            banner = TrialBanner(remaining)
+            self._trial_banner_slot.insertWidget(0, banner)
 
     def closeEvent(self, event):
         self.settings.set_window_geometry(self.saveGeometry())
