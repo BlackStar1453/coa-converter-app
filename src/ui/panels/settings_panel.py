@@ -36,20 +36,6 @@ class SettingsPanel(QWidget):
         paths_group = QGroupBox("Directories")
         paths_layout = QVBoxLayout(paths_group)
 
-        # Converter directory
-        conv_row = QHBoxLayout()
-        conv_row.addWidget(QLabel("Converter Dir:"))
-        self.converter_dir_edit = QLineEdit()
-        self.converter_dir_edit.setReadOnly(True)
-        conv_row.addWidget(self.converter_dir_edit)
-        self.converter_dir_status = QLabel("")
-        self.converter_dir_status.setFixedWidth(20)
-        conv_row.addWidget(self.converter_dir_status)
-        conv_browse = QPushButton("Browse")
-        conv_browse.clicked.connect(self._browse_converter_dir)
-        conv_row.addWidget(conv_browse)
-        paths_layout.addLayout(conv_row)
-
         # Template directory
         tmpl_row = QHBoxLayout()
         tmpl_row.addWidget(QLabel("Template Dir:"))
@@ -108,17 +94,11 @@ class SettingsPanel(QWidget):
         layout.addLayout(save_row)
 
     def _load_values(self):
-        self.converter_dir_edit.setText(self.settings.converter_dir())
         self.template_dir_edit.setText(self.settings.template_dir())
         self.output_dir_edit.setText(self.settings.output_dir())
-        self._refresh_all_status()
-        self._load_supplier_registry()
-
-    def _refresh_all_status(self):
-        """Update the exists/missing indicator for every directory."""
-        self._update_dir_status(self.converter_dir_edit.text(), self.converter_dir_status)
         self._update_dir_status(self.template_dir_edit.text(), self.template_dir_status)
         self._update_dir_status(self.output_dir_edit.text(), self.output_dir_status)
+        self._load_supplier_registry()
 
     @staticmethod
     def _update_dir_status(path: str, label: QLabel):
@@ -149,15 +129,6 @@ class SettingsPanel(QWidget):
             self.output_dir_edit.setText(path)
             self._update_dir_status(path, self.output_dir_status)
 
-    def _browse_converter_dir(self):
-        start = self.converter_dir_edit.text()
-        if not os.path.isdir(start):
-            start = ""
-        path = QFileDialog.getExistingDirectory(self, "Select COA Converter Directory", start)
-        if path:
-            self.converter_dir_edit.setText(path)
-            self._update_dir_status(path, self.converter_dir_status)
-
     def _load_supplier_registry(self):
         """Load and display supplier_registry.json."""
         self.supplier_table.setRowCount(0)
@@ -181,10 +152,9 @@ class SettingsPanel(QWidget):
             log.error("[Settings] Failed to load supplier registry: %s", e)
 
     def _save_settings(self):
-        self.settings.set_converter_dir(self.converter_dir_edit.text())
         self.settings.set_template_dir(self.template_dir_edit.text())
         self.settings.set_output_dir(self.output_dir_edit.text())
-
-        self._refresh_all_status()
+        self._update_dir_status(self.template_dir_edit.text(), self.template_dir_status)
+        self._update_dir_status(self.output_dir_edit.text(), self.output_dir_status)
         log.info("[Settings] Settings saved.")
         self.settings_changed.emit()

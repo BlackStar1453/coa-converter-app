@@ -92,7 +92,7 @@ class FilePanel(QWidget):
         main_layout.setSpacing(16)
 
         # --- Left: PDF selection ---
-        left_group = QGroupBox("PDF Source File")
+        left_group = QGroupBox("1. Select PDF")
         left_layout = QVBoxLayout(left_group)
 
         self.drop_zone = DropZone()
@@ -106,7 +106,7 @@ class FilePanel(QWidget):
         left_layout.addSpacing(16)
 
         # Output directory
-        out_label = QLabel("Output Directory:")
+        out_label = QLabel("Save to:")
         left_layout.addWidget(out_label)
 
         out_row = QHBoxLayout()
@@ -123,7 +123,7 @@ class FilePanel(QWidget):
         main_layout.addWidget(left_group, 1)
 
         # --- Right: Template selection ---
-        right_group = QGroupBox("Template Selection")
+        right_group = QGroupBox("2. Choose Templates")
         right_layout = QVBoxLayout(right_group)
 
         # Scrollable template list
@@ -143,7 +143,7 @@ class FilePanel(QWidget):
         bottom = QHBoxLayout()
         bottom.addStretch()
 
-        self.start_btn = QPushButton("Start Conversion >>")
+        self.start_btn = QPushButton("Convert")
         self.start_btn.setObjectName("primaryButton")
         self.start_btn.setMinimumHeight(40)
         self.start_btn.setMinimumWidth(180)
@@ -182,6 +182,22 @@ class FilePanel(QWidget):
         # Scan
         self._templates = scan_templates(self.settings.template_dir())
 
+        if not self._templates:
+            hint = QLabel("No templates found.\nCheck Settings → template directory.")
+            hint.setStyleSheet("color: #999; padding: 20px;")
+            hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            hint.setWordWrap(True)
+            self.template_list_layout.addWidget(hint)
+            self.template_list_layout.addStretch()
+            self._update_start_enabled()
+            return
+
+        # Select All checkbox
+        self._select_all_cb = QCheckBox("Select All")
+        self._select_all_cb.setStyleSheet("font-weight: bold; margin-bottom: 4px;")
+        self._select_all_cb.stateChanged.connect(self._on_select_all_toggled)
+        self.template_list_layout.addWidget(self._select_all_cb)
+
         current_category = ""
         for i, tmpl in enumerate(self._templates):
             if tmpl.category != current_category:
@@ -212,7 +228,26 @@ class FilePanel(QWidget):
         log.info("[FilePanel] PDF selected: %s", path)
         self._update_start_enabled()
 
+    def _on_select_all_toggled(self, state: int):
+        """Toggle all template checkboxes (batch, no cascade)."""
+        checked = state == Qt.CheckState.Checked.value
+        for btn in self._template_buttons:
+            btn.blockSignals(True)
+            btn.setChecked(checked)
+            btn.blockSignals(False)
+        self._rebuild_selected_templates()
+
     def _on_template_toggled(self, state: int):
+        """Rebuild selected templates list and sync Select All state."""
+        self._rebuild_selected_templates()
+        # Sync Select All checkbox without re-triggering
+        if hasattr(self, '_select_all_cb'):
+            all_checked = all(btn.isChecked() for btn in self._template_buttons)
+            self._select_all_cb.blockSignals(True)
+            self._select_all_cb.setChecked(all_checked)
+            self._select_all_cb.blockSignals(False)
+
+    def _rebuild_selected_templates(self):
         """Rebuild selected templates list from checked checkboxes."""
         self._selected_templates.clear()
         for btn in self._template_buttons:

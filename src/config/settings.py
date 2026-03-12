@@ -1,6 +1,7 @@
 """Persistent application settings using QSettings."""
 
 import os
+import sys
 import platform
 import hashlib
 import time
@@ -15,9 +16,18 @@ def _default_converter_dir() -> str:
     return os.path.join(home, "tools", "coa-converter")
 
 
+def _default_template_dir() -> str:
+    """Detect bundled templates in frozen mode, fallback to dev path."""
+    if getattr(sys, 'frozen', False):
+        bundled = os.path.join(sys._MEIPASS, "coa_modules", "templates")
+        if os.path.isdir(bundled):
+            return bundled
+    return os.path.join(_default_converter_dir(), "templates")
+
+
 COA_CONVERTER_DIR = _default_converter_dir()
-DEFAULT_TEMPLATE_DIR = os.path.join(COA_CONVERTER_DIR, "templates")
-DEFAULT_OUTPUT_DIR = os.path.join(COA_CONVERTER_DIR, "output")
+DEFAULT_TEMPLATE_DIR = _default_template_dir()
+DEFAULT_OUTPUT_DIR = os.path.join(os.path.expanduser("~"), "Desktop", "COA Output")
 
 ORGANIZATION = "COAConverter"
 APPLICATION = "COA Converter"

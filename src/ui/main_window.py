@@ -50,11 +50,11 @@ class MainWindow(QMainWindow):
 
         # Tab 1: File Setup
         self.file_panel = FilePanel(self.settings)
-        self.tabs.addTab(self.file_panel, "File Setup")
+        self.tabs.addTab(self.file_panel, "Convert")
 
         # Tab 2: Conversion Progress
         self.conversion_panel = ConversionPanel(self.qt_log_handler)
-        self.tabs.addTab(self.conversion_panel, "Conversion")
+        self.tabs.addTab(self.conversion_panel, "Progress")
 
         # Tab 3: Results
         self.results_panel = ResultsPanel(self.settings)
